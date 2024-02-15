@@ -1,7 +1,9 @@
 import discord
-from discord.ext import commands
+import os
 import requests
+from discord.ext import commands
 from datetime import datetime
+from dotenv import load_dotenv
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -70,4 +72,5 @@ async def libur(ctx, nama_bulan: str):
         await ctx.send("Bulan tidak valid. Silakan masukkan nama bulan dalam bahasa Indonesia.")
 # End Hari Libur #
 
-bot.run('MTIwNzUyNDg5ODUwMzc5NDY5OA.GmEsMC.U_YXpCf7JTYGZMHhCwpSdE6M1Pz4FkhXmK2-48')
+load_dotenv()
+bot.run(os.getenv('TOKEN'))
