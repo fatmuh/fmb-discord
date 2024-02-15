@@ -1,6 +1,7 @@
 import discord
 import os
 import requests
+import locale
 from discord.ext import commands
 from datetime import datetime
 from dotenv import load_dotenv
@@ -8,8 +9,8 @@ from dotenv import load_dotenv
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='>', intents=intents)
-api_url = "https://raw.githubusercontent.com/guangrei/APIHariLibur_V2/main/calendar.min.json"
-api_url_presiden_kpu = "https://sirekap-kpu.heirro.dev/"
+voice_client = None
+load_dotenv()
 
 # Bulan Inggris Declare #
 bulan_inggris = {
@@ -32,7 +33,7 @@ bulan_inggris = {
 async def h(ctx):
     embed = discord.Embed(title="FMB Help Center ✨", color=0xF49726)
 
-    embed.add_field(name="Command Categories :", value="📅 `libur <bulan>    :` untuk mengetahui tanggal hari libur nasional atau cuti bersama. Contoh: >libur juni\n" + "👑 `pemilu  :` Melihat quick count voting seputar PEMILU\n\nTo view the commands of a category, send `.help <category>`", inline=False)
+    embed.add_field(name="Command Categories :", value="📅 `libur <bulan>    :` untuk mengetahui tanggal hari libur nasional atau cuti bersama. Contoh: >libur juni\n" + "👑 `pemilu  :` Melihat quick count voting seputar PEMILU\n\nTo view the commands of a category, send `>h`", inline=False)
 
     embed.set_footer(icon_url=ctx.author.avatar, text="Help requested by: {}".format(ctx.author.display_name))
     await ctx.send(embed=embed)
@@ -44,7 +45,7 @@ async def libur(ctx, nama_bulan: str):
     bulan_lower = nama_bulan.lower()
     if bulan_lower in bulan_inggris:
         bulan = bulan_inggris[bulan_lower]
-        response = requests.get(api_url)
+        response = requests.get(os.getenv('API_HARI_LIBUR'))
         if response.status_code == 200:
             data = response.json()
             response_msg = f"***Hari Libur Pada Bulan {nama_bulan.capitalize()} {datetime.now().year}:*** \n"
@@ -72,31 +73,43 @@ async def libur(ctx, nama_bulan: str):
         await ctx.send("Bulan tidak valid. Silakan masukkan nama bulan dalam bahasa Indonesia.")
 # End Hari Libur #
         
-# Start Jumlah Suara #
+# Start Pengecekan Harga Koin #
 @bot.command()
-async def pemilu(ctx):
-    response = requests.get(api_url_presiden_kpu)
-    if response.status_code == 200:
-        data = response.json()['data']
-        timestamp = data.get("timestamp", "")
-        progress = data.get("progress", {})
-        paslon = data.get("paslon", [])
-        
-        message = f"Data Pemilihan Umum Terakhir (Timestamp: {timestamp})\n"
-        message += f"Progress: {progress.get('current', 0)} dari {progress.get('total', 0)} TPS ({progress.get('percentage', 0)}%)\n\n"
-        
-        if isinstance(paslon, dict):
-            for key, candidate in paslon.items():
-                message += f"> **Paslon {key}: {candidate['name']}**\n"
-                message += f"> Jumlah Pemilih: {candidate['voters']}\n"
-                message += f"> Persentase: {candidate['percentage']}%\n\n"
+async def price(ctx, symbol: str):
+    locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+    coin = get_coin_from_symbol(symbol)
+    if coin:
+        price_data = get_coin_price(coin)
+        if price_data:
+            change_24h = round(price_data['usd_24h_change'], 2)
+            embed = discord.Embed(title=f"{coin.capitalize()} Price", color=0x74E291)
+            embed.add_field(name="Price (USD)", value=f"`{price_data['usd']}`", inline=False)
+            embed.add_field(name="Change (24h)", value=f"`{change_24h}%`", inline=False)
+            embed.set_footer(text="Requested by: {}".format(ctx.author.display_name), icon_url=ctx.author.avatar)
+            await ctx.send(embed=embed)
         else:
-            message += "Data calon presiden tidak valid.\n"
-        
-        await ctx.send(message)
+            await ctx.send(f"Gagal mendapatkan data harga untuk {coin.upper()}.")
     else:
-        await ctx.send("Gagal mengambil data dari API.")
-# End Jumlah Suara #
+        await ctx.send(f"Koin dengan simbol {symbol.upper()} tidak ditemukan.")
 
-load_dotenv()
+def get_coin_from_symbol(symbol):
+    url = 'https://api.coingecko.com/api/v3/coins/list'
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        for coin in data:
+            if coin['symbol'] == symbol:
+                return coin['id']
+    return None
+
+def get_coin_price(coin):
+    url = f'https://api.coingecko.com/api/v3/simple/price?ids={coin}&vs_currencies=usd&include_24hr_change=true'
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        if coin in data:
+            return data[coin]
+    return None
+# End Pengecekan Harga Koin #
+
 bot.run(os.getenv('TOKEN'))
