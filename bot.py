@@ -9,6 +9,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='>', intents=intents)
 api_url = "https://raw.githubusercontent.com/guangrei/APIHariLibur_V2/main/calendar.min.json"
+api_url_presiden_kpu = "https://sirekap-kpu.heirro.dev/"
 
 # Bulan Inggris Declare #
 bulan_inggris = {
@@ -31,9 +32,8 @@ bulan_inggris = {
 async def h(ctx):
     embed = discord.Embed(title="FMB Help Center ✨", color=0xF49726)
 
-    # embed.add_field(name="Command Categories :", value="📅 `libur <bulan>    :` untuk mengetahui tanggal hari libur nasional atau cuti bersama.\n" + "🔧 `utility  :` Bot utility zone\n😏 `nsfw     :` Image generation with a memey twist.\n\nTo view the commands of a category, send `.help <category>`", inline=False)
+    embed.add_field(name="Command Categories :", value="📅 `libur <bulan>    :` untuk mengetahui tanggal hari libur nasional atau cuti bersama. Contoh: >libur juni\n" + "👑 `pemilu  :` Melihat quick count voting seputar PEMILU\n\nTo view the commands of a category, send `.help <category>`", inline=False)
 
-    embed.add_field(name="Command Categories :", value="📅 `libur <nama_bulan>    :` untuk mengetahui tanggal hari libur nasional atau cuti bersama. Contoh: >libur juni\n" + "\n\nTo view the commands of a category, send `>h`", inline=False)
     embed.set_footer(icon_url=ctx.author.avatar, text="Help requested by: {}".format(ctx.author.display_name))
     await ctx.send(embed=embed)
 # End Help Center #
@@ -71,6 +71,32 @@ async def libur(ctx, nama_bulan: str):
     else:
         await ctx.send("Bulan tidak valid. Silakan masukkan nama bulan dalam bahasa Indonesia.")
 # End Hari Libur #
+        
+# Start Jumlah Suara #
+@bot.command()
+async def pemilu(ctx):
+    response = requests.get(api_url_presiden_kpu)
+    if response.status_code == 200:
+        data = response.json()['data']
+        timestamp = data.get("timestamp", "")
+        progress = data.get("progress", {})
+        paslon = data.get("paslon", [])
+        
+        message = f"Data Pemilihan Umum Terakhir (Timestamp: {timestamp})\n"
+        message += f"Progress: {progress.get('current', 0)} dari {progress.get('total', 0)} TPS ({progress.get('percentage', 0)}%)\n\n"
+        
+        if isinstance(paslon, dict):
+            for key, candidate in paslon.items():
+                message += f"> **Paslon {key}: {candidate['name']}**\n"
+                message += f"> Jumlah Pemilih: {candidate['voters']}\n"
+                message += f"> Persentase: {candidate['percentage']}%\n\n"
+        else:
+            message += "Data calon presiden tidak valid.\n"
+        
+        await ctx.send(message)
+    else:
+        await ctx.send("Gagal mengambil data dari API.")
+# End Jumlah Suara #
 
 load_dotenv()
 bot.run(os.getenv('TOKEN'))
