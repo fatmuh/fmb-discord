@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix='.', intents=intents)
+bot = commands.Bot(command_prefix='>', intents=intents)
 api_url = "https://raw.githubusercontent.com/guangrei/APIHariLibur_V2/main/calendar.min.json"
 
 # Bulan Inggris Declare #
