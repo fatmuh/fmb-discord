@@ -33,7 +33,7 @@ async def h(ctx):
 
     # embed.add_field(name="Command Categories :", value="📅 `libur <bulan>    :` untuk mengetahui tanggal hari libur nasional atau cuti bersama.\n" + "🔧 `utility  :` Bot utility zone\n😏 `nsfw     :` Image generation with a memey twist.\n\nTo view the commands of a category, send `.help <category>`", inline=False)
 
-    embed.add_field(name="Command Categories :", value="📅 `libur <nama_bulan>    :` untuk mengetahui tanggal hari libur nasional atau cuti bersama. Contoh: .libur juni\n" + "\n\nTo view the commands of a category, send `.h <category>`", inline=False)
+    embed.add_field(name="Command Categories :", value="📅 `libur <nama_bulan>    :` untuk mengetahui tanggal hari libur nasional atau cuti bersama. Contoh: >libur juni\n" + "\n\nTo view the commands of a category, send `>h`", inline=False)
     embed.set_footer(icon_url=ctx.author.avatar, text="Help requested by: {}".format(ctx.author.display_name))
     await ctx.send(embed=embed)
 # End Help Center #
